@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LAP CLIP Viewer</string>
+    <string name="title_activity_main">LAP CLIP Viewer</string>
+    <string name="package_name">com.lapclip.viewer</string>
+    <string name="custom_url_scheme">com.lapclip.viewer</string>
+</resources>

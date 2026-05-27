@@ -6,36 +6,71 @@ const Scraper = {
 
   abort() { this._abort = true; },
   resetAbort() { this._abort = false; },
-
-  async _nativeFetch(url) {
-    if (window.Capacitor?.isNativePlatform?.()) {
-      try {
-        const res = await CapacitorHttp.request({ url, method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36' }, connectTimeout: 10000, readTimeout: 15000 });
-        return res.data;
-      } catch (e) {
-        if (typeof CapacitorHttp === 'undefined') throw e;
-      }
-    }
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.text();
-  },
+  clearCache() { this._cache = {}; },
 
   async fetchUrl(url) {
     if (this._cache[url]) return this._cache[url];
     if (this._abort) throw new Error('aborted');
-    const html = await this._nativeFetch(url);
-    this._cache[url] = html;
-    return html;
+
+    const ua = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36';
+
+    // Try Capacitor native HTTP via Plugins API (canonical Capacitor 8 way)
+    try {
+      if (window.Capacitor?.Plugins?.CapacitorHttp) {
+        const res = await Capacitor.Plugins.CapacitorHttp.request({
+          url, method: 'GET',
+          headers: { 'User-Agent': ua },
+          connectTimeout: 15000,
+          readTimeout: 30000,
+        });
+        if (res && res.data) {
+          this._cache[url] = res.data;
+          return res.data;
+        }
+      }
+    } catch (e) { console.warn('[scraper] CapacitorHttp plugin failed:', e.message || e); }
+
+    // Try global CapacitorHttp (also Capacitor 8)
+    try {
+      if (typeof CapacitorHttp !== 'undefined') {
+        const res = await CapacitorHttp.request({
+          url, method: 'GET',
+          headers: { 'User-Agent': ua },
+          connectTimeout: 15000,
+          readTimeout: 30000,
+        });
+        if (res && res.data) {
+          this._cache[url] = res.data;
+          return res.data;
+        }
+      }
+    } catch (e) { console.warn('[scraper] CapacitorHttp global failed:', e.message || e); }
+
+    // Fallback: plain fetch() (works in browser dev, may fail on Android due to CORS)
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': ua },
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      this._cache[url] = text;
+      return text;
+    } catch (e) {
+      console.error('[scraper] All HTTP methods failed for', url, e.message || e);
+      throw new Error('Failed to fetch: ' + url + ' (' + (e.message || e) + ')');
+    }
   },
 
-  clearCache() { this._cache = {}; },
-
   async fetchEvents(year) {
-    const url = year === 2026 ? `${this.BASE}/index.php` : `${this.BASE}/${year}/`;
+    // index.php always shows latest events (2026).
+    // For other years, we fetch from the index and rely on server's default list,
+    // then use nextevents.php for year-specific infinite scroll.
+    // The year subdirectories (/lap/2025/) may just mirror index.php.
+    const url = year === 2026 ? `${this.BASE}/index.php` : `${this.BASE}/index.php`;
     let html;
-    try { html = await this.fetchUrl(url); } catch (e) { return []; }
+    try { html = await this.fetchUrl(url); } catch { return []; }
     let events = Parser.parseEventList(html);
+    // Load more events for the selected year via infinite scroll
     let page = 2;
     while (true) {
       const nextUrl = `${this.BASE}/nextevents.php?year=${year}&page=${page}`;
@@ -46,13 +81,20 @@ const Scraper = {
       events = events.concat(nextEvents);
       page++;
     }
+    // Remove duplicates by evtId
+    const seen = new Set();
+    events = events.filter(e => {
+      if (seen.has(e.evtId)) return false;
+      seen.add(e.evtId);
+      return true;
+    });
     return events;
   },
 
   async fetchCategories(evtId) {
     const url = `${this.BASE}/result.php?evt=${evtId}`;
     let html;
-    try { html = await this.fetchUrl(url); } catch { return []; }
+    try { html = await this.fetchUrl(url); } catch { return { title: '', categories: [] }; }
     const title = Parser.parseEventTitle(html);
     const cats = Parser.parseCategories(html);
     return { title, categories: cats };
@@ -80,7 +122,7 @@ const Scraper = {
   async fetchLapData(evtId, ctgId, num) {
     const url = `${this.BASE}/laptimes.php?evt=${evtId}&ctg=${ctgId}&num=${num}`;
     let html;
-    try { html = await this.fetchUrl(url); } catch { return []; }
+    try { html = await this.fetchUrl(url); } catch { return { laps: [], team: '' }; }
     const laps = Parser.parseLapData(html);
     const team = Parser.parseRiderTeamName(html);
     return { laps, team };

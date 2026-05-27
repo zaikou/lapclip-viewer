@@ -19,10 +19,10 @@ function loadEvents(year) {
   const list = document.getElementById('event-list');
   list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">読み込み中...</p>';
   Scraper.fetchEvents(year).then(events => {
-    if (events.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">イベントが見つかりません</p>'; return; }
+    if (events.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--accent-yellow);padding:20px;">イベントが見つかりません<br><span style="font-size:0.8rem;color:var(--text-muted)">通信エラーか、サーバーに接続できません</span></p>'; return; }
     Views.renderEvents(events);
-  }).catch(() => {
-    list.innerHTML = '<p style="text-align:center;color:var(--accent-red);padding:20px;">読み込みエラー<br>端末で再度お試しください</p>';
+  }).catch(e => {
+    list.innerHTML = '<p style="text-align:center;color:var(--accent-red);padding:20px;">読み込みエラー<br><span style="font-size:0.8rem;">' + (e.message || '') + '</span></p>';
   });
 }
 
@@ -96,11 +96,35 @@ function setupNavigation() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function waitForCapacitor() {
+  return new Promise(resolve => {
+    if (window.Capacitor && (window.Capacitor.isNativePlatform?.() || window.Capacitor.Plugins?.CapacitorHttp)) {
+      resolve();
+    } else {
+      // Capacitor may inject bridge after page load; poll up to 5s
+      let tries = 0;
+      const check = setInterval(() => {
+        tries++;
+        if (window.Capacitor && (window.Capacitor.isNativePlatform?.() || window.Capacitor.Plugins?.CapacitorHttp)) {
+          clearInterval(check);
+          resolve();
+        } else if (tries > 50) {
+          clearInterval(check);
+          console.warn('[app] Capacitor bridge not detected, continuing anyway');
+          resolve();
+        }
+      }, 100);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await waitForCapacitor();
+  console.log('[app] Capacitor ready, platform:', window.Capacitor?.getPlatform?.());
   loadYearsAndEvents();
   setupNavigation();
   setTimeout(() => {
     showScreen('screen-event');
     AppState.screenStack = ['screen-event'];
-  }, 1200);
+  }, 800);
 });

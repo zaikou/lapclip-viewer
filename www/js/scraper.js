@@ -62,11 +62,8 @@ const Scraper = {
   },
 
   async fetchEvents(year) {
-    // index.php always shows latest events (2026).
-    // For other years, we fetch from the index and rely on server's default list,
-    // then use nextevents.php for year-specific infinite scroll.
-    // The year subdirectories (/lap/2025/) may just mirror index.php.
-    const url = year === 2026 ? `${this.BASE}/index.php` : `${this.BASE}/index.php`;
+    // Year-specific index pages: /lap/index.php (2026) or /lap/2025 etc.
+    const url = year === 2026 ? `${this.BASE}/index.php` : `${this.BASE}/${year}`;
     let html;
     try { html = await this.fetchUrl(url); } catch { return []; }
     let events = Parser.parseEventList(html);

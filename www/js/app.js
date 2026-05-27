@@ -31,6 +31,7 @@ function goBack() {
 
 function loadEvents(year) {
   Scraper.resetAbort();
+  Scraper.clearCache();
   const list = document.getElementById('event-list');
   list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">読み込み中...</p>';
   Scraper.fetchEvents(year).then(events => {

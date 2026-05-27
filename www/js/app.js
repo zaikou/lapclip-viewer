@@ -11,8 +11,11 @@ function showScreen(id) {
 }
 
 function goBack() {
-  const prev = AppState.screenStack[AppState.screenStack.length - 2] || 'screen-event';
+  AppState.screenStack.pop();
+  const prev = AppState.screenStack[AppState.screenStack.length - 1] || 'screen-event';
   showScreen(prev);
+  // Scraper.abort() to cancel any in-flight requests
+  Scraper.abort();
 }
 
 function loadEvents(year) {
@@ -27,15 +30,21 @@ function loadEvents(year) {
 }
 
 async function startDataLoad(evtId, ctgId, ctgName) {
-  showScreen('screen-loading');
   Scraper.resetAbort();
+  AppState.screenStack.push('screen-loading');
+  showScreen('screen-loading');
   document.getElementById('progress-list').innerHTML = '';
   try {
     const riders = await Scraper.fetchAllRiders(evtId, ctgId);
-    if (riders.length === 0) { document.getElementById('progress-text').textContent = '選手が見つかりません'; return; }
+    if (Scraper._abort) return;
+    if (riders.length === 0) { document.getElementById('progress-text').textContent = '選手が見つかりません'; goBack(); return; }
     const lapDataMap = await Scraper.fetchAllLapData(evtId, ctgId, riders, (c, t, r) => Views.renderProgress(c, t, r));
+    if (Scraper._abort) return;
     const data = Processor.process(riders, lapDataMap);
     AppState.currentData = data; AppState.currentRiders = riders; AppState.currentLapDataMap = lapDataMap;
+    // Remove loading from stack before pushing timing
+    if (AppState.screenStack[AppState.screenStack.length - 1] === 'screen-loading') AppState.screenStack.pop();
+    AppState.screenStack.push('screen-timing');
     showScreen('screen-timing');
     Views.renderTiming(data, ctgName);
   } catch (e) {

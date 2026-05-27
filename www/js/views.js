@@ -54,6 +54,18 @@ const Views = {
 
   renderTiming(data, categoryName) {
     document.getElementById('timing-title').textContent = categoryName;
+    const hasLapData = data.totalLaps > 0;
+    // Show/hide tabs based on whether lap data exists
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+      btn.style.display = (!hasLapData && (i === 0 || i === 1 || i === 3)) ? 'none' : '';
+    });
+    if (!hasLapData) {
+      // No lap data: show only overall tab
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="tab-overall"]')?.classList.add('active');
+      document.getElementById('tab-overall')?.classList.add('active');
+    }
     this.renderLapTab(data);
     this.renderCumulativeTab(data);
     this.renderOverallTab(data);

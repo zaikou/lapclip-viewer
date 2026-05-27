@@ -49,14 +49,24 @@ const Parser = {
       const spans = el.querySelectorAll('.nwb, .nw');
       const parts = [];
       spans.forEach(s => parts.push(s.textContent.trim()));
-      if (parts.length < 6) return;
-      const rankRaw = parts[0];        // "1位" or "OPN" or "-"
-      const number = parts[1].replace('No.','');
-      const riderName = parts[2];
-      const lapsRaw = parts[3].replace('周','');
-      const totalTime = parts[4];
-      const gap = parts[5];
-      const laps = lapsRaw === '-' ? 0 : parseInt(lapsRaw) || 0;
+      if (parts.length < 5) return;
+      let p = 0;
+      const rankRaw = parts[p++];
+      const number = parts[p++].replace('No.','');
+      const riderName = parts[p++];
+      let laps = 0, totalTime, gap;
+      if (parts.length >= 6) {
+        // With lap count: [rank, no, name, lapCount, totalTime, gap]
+        const lapsRaw = parts[p++].replace('周','');
+        laps = lapsRaw === '-' ? 0 : parseInt(lapsRaw) || 0;
+        totalTime = parts[p++];
+        gap = parts[p++];
+      } else {
+        // Without lap count (single lap): [rank, no, name, totalTime, gap]
+        totalTime = parts[p++];
+        gap = parts[p++];
+        laps = totalTime && totalTime !== '-:--:--.---' ? 1 : 0;
+      }
       const isOPN = rankRaw === 'OPN';
       const isDNS = rankRaw === '-';
       const rank = isDNS ? 999 : (isOPN ? -1 : parseInt(rankRaw) || 0);

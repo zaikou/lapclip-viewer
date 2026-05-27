@@ -9,7 +9,123 @@ class LapChart {
     this.zoom = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
     this._touchStart = null;
     this._pinchStart = null;
+    this._xMinEl = document.getElementById('z-x-min');
+    this._xMaxEl = document.getElementById('z-x-max');
+    this._yMinEl = document.getElementById('z-y-min');
+    this._yMaxEl = document.getElementById('z-y-max');
+    this._xLabel = document.getElementById('z-x-label');
+    this._yLabel = document.getElementById('z-y-label');
+    this._xFill = document.getElementById('x-range').querySelector('.range-fill');
+    this._yFill = document.getElementById('y-range').querySelector('.range-fill');
     this._setupEvents();
+    this._setupSliderListeners();
+  }
+
+  _setupSliderListeners() {
+    const slide = () => {
+      if (this._sliderBusy) return;
+      let xMin = parseFloat(this._xMinEl.value);
+      let xMax = parseFloat(this._xMaxEl.value);
+      let yMin = parseFloat(this._yMinEl.value);
+      let yMax = parseFloat(this._yMaxEl.value);
+      if (xMin > xMax) { xMin = xMax; this._xMinEl.value = xMin; }
+      if (yMin > yMax) { yMin = yMax; this._yMinEl.value = yMin; }
+      this.zoom = { xMin, xMax, yMin, yMax };
+      this._updateSliderUI();
+      this.draw();
+    };
+    this._xMinEl.addEventListener('input', slide);
+    this._xMaxEl.addEventListener('input', slide);
+    this._yMinEl.addEventListener('input', slide);
+    this._yMaxEl.addEventListener('input', slide);
+  }
+
+  _syncSliders() {
+    if (this._sliderBusy) return;
+    this._sliderBusy = true;
+    const b = this._dataBounds();
+    const xM = Math.max(b.maxPos, 1);
+    const pad = (b.maxTime - b.minTime) * 0.15 || 30;
+    const yLo = Math.max(0, b.minTime - pad);
+    const yHi = b.maxTime + pad;
+
+    this._xMinEl.min = 0; this._xMinEl.max = xM;
+    this._xMaxEl.min = 0; this._xMaxEl.max = xM;
+    this._yMinEl.min = yLo; this._yMinEl.max = yHi;
+    this._yMaxEl.min = yLo; this._yMaxEl.max = yHi;
+
+    this.zoom.xMin = Math.max(0, Math.min(this.zoom.xMin, xM));
+    this.zoom.xMax = Math.max(0, Math.min(this.zoom.xMax, xM));
+    this.zoom.yMin = Math.max(yLo, Math.min(this.zoom.yMin, yHi));
+    this.zoom.yMax = Math.max(yLo, Math.min(this.zoom.yMax, yHi));
+
+    this._updateSliderUI();
+    this._sliderBusy = false;
+  }
+
+  _updateSliderUI() {
+    const z = this.zoom;
+    this._xMinEl.value = z.xMin;
+    this._xMaxEl.value = z.xMax;
+    this._yMinEl.value = z.yMin;
+    this._yMaxEl.value = z.yMax;
+    this._xLabel.textContent = `L${z.xMin.toFixed(1)} – L${z.xMax.toFixed(1)}`;
+    this._yLabel.textContent = `${Parser.secondsToTime(z.yMin)} – ${Parser.secondsToTime(z.yMax)}`;
+    const xPct = ((z.xMin - parseFloat(this._xMinEl.min)) / (parseFloat(this._xMinEl.max) - parseFloat(this._xMinEl.min) || 1)) * 100;
+    const xPct2 = ((z.xMax - parseFloat(this._xMinEl.min)) / (parseFloat(this._xMinEl.max) - parseFloat(this._xMinEl.min) || 1)) * 100;
+    this._xFill.style.left = xPct + '%';
+    this._xFill.style.width = (xPct2 - xPct) + '%';
+    const yPct = ((z.yMin - parseFloat(this._yMinEl.min)) / (parseFloat(this._yMinEl.max) - parseFloat(this._yMinEl.min) || 1)) * 100;
+    const yPct2 = ((z.yMax - parseFloat(this._yMinEl.min)) / (parseFloat(this._yMinEl.max) - parseFloat(this._yMinEl.min) || 1)) * 100;
+    this._yFill.style.left = yPct + '%';
+    this._yFill.style.width = (yPct2 - yPct) + '%';
+  }
+
+  _dataBounds() {
+    let maxPos = 0, minTime = 0, maxTime = 1;
+    if (this.data) {
+      this.selectedRiders.forEach(no => {
+        (this.data.riderLapMap[no] || []).forEach(l => {
+          if (isFinite(l.totalTimeSec)) {
+            if (l.lapPosition > maxPos) maxPos = l.lapPosition;
+            if (l.totalTimeSec < minTime) minTime = l.totalTimeSec;
+            if (l.totalTimeSec > maxTime) maxTime = l.totalTimeSec;
+          }
+        });
+      });
+    }
+    return { maxPos, minTime, maxTime };
+  }
+
+  resetZoom() {
+    const b = this._dataBounds();
+    const pad = (b.maxTime - b.minTime) * 0.15 || 30;
+    this.zoom = { xMin: 0, xMax: Math.max(b.maxPos, 1), yMin: Math.max(0, b.minTime - pad), yMax: b.maxTime + pad };
+    this._syncSliders();
+  }
+
+  setData(data) {
+    this.data = data;
+    this.resetZoom();
+  }
+
+  addRider(riderNo) {
+    if (!this.selectedRiders.includes(riderNo)) {
+      this.selectedRiders.push(riderNo);
+      this.resetZoom();
+      this.draw();
+    }
+  }
+
+  removeRider(riderNo) {
+    this.selectedRiders = this.selectedRiders.filter(n => n !== riderNo);
+    this.resetZoom();
+    this.draw();
+  }
+
+  toggleRider(riderNo) {
+    if (this.selectedRiders.includes(riderNo)) this.removeRider(riderNo);
+    else this.addRider(riderNo);
   }
 
   _setupEvents() {
@@ -45,6 +161,7 @@ class LapChart {
         this.zoom.xMax = this._touchStart.xMax - dx * rangeX;
         this.zoom.yMin = this._touchStart.yMin + dy * rangeY;
         this.zoom.yMax = this._touchStart.yMax + dy * rangeY;
+        this._syncSliders();
         this.draw();
       } else if (e.touches.length === 2 && this._pinchStart) {
         const d = this._dist(e.touches);
@@ -53,7 +170,6 @@ class LapChart {
       }
     }, { passive: true });
     c.addEventListener('touchend', () => { this._touchStart = null; this._pinchStart = null; });
-    // Double-tap to reset
     let lastTap = 0;
     c.addEventListener('touchend', e => {
       const now = Date.now();
@@ -79,47 +195,8 @@ class LapChart {
     this.zoom.xMax = cx + (1 - mx) * newRangeX;
     this.zoom.yMin = cy - (1 - my) * newRangeY;
     this.zoom.yMax = cy + my * newRangeY;
+    this._syncSliders();
     this.draw();
-  }
-
-  resetZoom() {
-    let maxPos = 0, minTime = 0, maxTime = 1;
-    if (this.data) {
-      this.selectedRiders.forEach(no => {
-        (this.data.riderLapMap[no] || []).forEach(l => {
-          if (isFinite(l.totalTimeSec)) {
-            if (l.lapPosition > maxPos) maxPos = l.lapPosition;
-            if (l.totalTimeSec < minTime) minTime = l.totalTimeSec;
-            if (l.totalTimeSec > maxTime) maxTime = l.totalTimeSec;
-          }
-        });
-      });
-    }
-    const pad = (maxTime - minTime) * 0.15 || 30;
-    this.zoom = { xMin: 0, xMax: Math.max(maxPos, 1), yMin: Math.max(0, minTime - pad), yMax: maxTime + pad };
-  }
-
-  setData(data) {
-    this.data = data;
-  }
-
-  addRider(riderNo) {
-    if (!this.selectedRiders.includes(riderNo)) {
-      this.selectedRiders.push(riderNo);
-      this.resetZoom();
-      this.draw();
-    }
-  }
-
-  removeRider(riderNo) {
-    this.selectedRiders = this.selectedRiders.filter(n => n !== riderNo);
-    this.resetZoom();
-    this.draw();
-  }
-
-  toggleRider(riderNo) {
-    if (this.selectedRiders.includes(riderNo)) this.removeRider(riderNo);
-    else this.addRider(riderNo);
   }
 
   draw() {

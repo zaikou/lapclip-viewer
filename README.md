@@ -1,6 +1,8 @@
 # LAP CLIP Viewer
 
-LAP CLIP（https://matrix-sports.jp/lap/）の自転車レース結果をF1ライブタイミング風に表示するAndroidアプリ。
+LAP CLIP（ https://matrix-sports.jp/lap/ ）の自転車レース結果をF1ライブタイミング風に表示するAndroidアプリ。
+
+完全にバイブコーディングでやっています。（私はCとH8のアセンブラしかわかりません）
 
 ## 機能
 
@@ -38,3 +40,10 @@ cd android
 - Capacitor 8（Android WebViewラップ）
 - JavaScript（Vanilla JS、DOMParserでHTMLスクレイピング）
 - Canvas 2D API（グラフ描画）
+
+## 開発環境
+
+- OpenCode
+  - DeepSeek V4 Flash Free
+- VSC copilot （コードチェック用）
+  - Claude 4.5 

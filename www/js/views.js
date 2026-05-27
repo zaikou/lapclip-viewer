@@ -67,8 +67,8 @@ const Views = {
     document.getElementById('timing-title').textContent = categoryName;
     const hasLapData = data.totalLaps > 0;
     // Show/hide tabs based on whether lap data exists
-    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.style.display = (!hasLapData && (i === 0 || i === 1 || i === 3 || i === 4)) ? 'none' : '';
+    ['tab-overall-ct','tab-chart'].forEach(id => {
+      document.querySelector(`.tab-btn[data-tab="${id}"]`).style.display = hasLapData ? '' : 'none';
     });
     if (!hasLapData) {
       // No lap data: show only overall tab
@@ -77,76 +77,9 @@ const Views = {
       document.querySelector('.tab-btn[data-tab="tab-overall"]')?.classList.add('active');
       document.getElementById('tab-overall')?.classList.add('active');
     }
-    this.renderLapTab(data);
-    this.renderCumulativeTab(data);
     this.renderOverallTab(data);
     this.renderOverallCTTab(data);
     this.renderChartTab(data);
-  },
-
-  renderLapTab(data) {
-    const el = document.getElementById('tab-lap');
-    let html = '';
-    for (let lap = 1; lap <= data.totalLaps; lap++) {
-      const rankings = data.getLapRankings(lap);
-      if (rankings.length === 0) continue;
-      const isOpen = lap <= 3;
-      html += `<div class="lap-group">
-        <div class="lap-group-header ${isOpen?'open':''}" data-toggle-lap="${lap}">
-          <span>Lap ${lap}</span>
-          <span class="arrow">&#x25B6;</span>
-        </div>
-        <div class="lap-group-body ${isOpen?'open':''}">
-          <table><thead><tr><th>Pos</th><th>No.</th><th>名前</th><th>Lap</th><th>Gap</th></tr></thead><tbody>`;
-      rankings.forEach(r => {
-        let cls = '';
-        if (r.isOverallBest) cls = 'overall-best';
-        else if (r.isPersonalBest) cls = 'personal-best';
-        html += `<tr class="${cls}"><td class="pos">${r.position}</td><td class="num">${r.rider.number}</td>
-          <td class="name-cell">${this._escape(r.rider.name)}</td>
-          <td class="time-cell td-lap">${Parser.secondsToLapTime(r.lap.lapTimeSec)}</td>
-          <td class="gap-cell">${Parser.formatGap(r.gap)}</td></tr>`;
-      });
-      html += '</tbody></table></div></div>';
-    }
-    el.innerHTML = html;
-    el.querySelectorAll('[data-toggle-lap]').forEach(hdr => {
-      hdr.addEventListener('click', () => {
-        hdr.classList.toggle('open');
-        hdr.nextElementSibling.classList.toggle('open');
-      });
-    });
-  },
-
-  renderCumulativeTab(data) {
-    const el = document.getElementById('tab-cumulative');
-    let html = '';
-    for (let lap = 1; lap <= data.totalLaps; lap++) {
-      const rankings = data.getCumulativeRankings(lap);
-      if (rankings.length === 0) continue;
-      const isOpen = lap <= 3;
-      html += `<div class="lap-group">
-        <div class="lap-group-header ${isOpen?'open':''}" data-toggle-lap="${lap}">
-          <span>After Lap ${lap}</span>
-          <span class="arrow">&#x25B6;</span>
-        </div>
-        <div class="lap-group-body ${isOpen?'open':''}">
-          <table><thead><tr><th>Pos</th><th>No.</th><th>名前</th><th>Total</th><th>Gap</th></tr></thead><tbody>`;
-      rankings.forEach(r => {
-        html += `<tr><td class="pos">${r.position}</td><td class="num">${r.rider.number}</td>
-          <td class="name-cell">${this._escape(r.rider.name)}</td>
-          <td class="time-cell">${Parser.secondsToTime(r.lap.totalTimeSec)}</td>
-          <td class="gap-cell">${Parser.formatGap(r.gap)}</td></tr>`;
-      });
-      html += '</tbody></table></div></div>';
-    }
-    el.innerHTML = html;
-    el.querySelectorAll('[data-toggle-lap]').forEach(hdr => {
-      hdr.addEventListener('click', () => {
-        hdr.classList.toggle('open');
-        hdr.nextElementSibling.classList.toggle('open');
-      });
-    });
   },
 
   _resolveEntry(entry) {
@@ -156,17 +89,19 @@ const Views = {
   renderOverallTab(data) {
     const el = document.getElementById('tab-overall');
     const sortLap = window._overallSortLap || 0;
+    const tp = data.timingPoints || [];
     let rankings;
-    if (sortLap > 0 && sortLap <= data.totalLaps) {
+    if (sortLap > 0 && tp.includes(sortLap)) {
       rankings = data.getCumulativeRankings(sortLap);
     } else {
       rankings = data.getOverallRankings();
     }
     let html = '<table><thead><tr><th class="th-sort" data-sort="0">Pos</th><th>No.</th><th>名前</th>';
-    for (let lap = 1; lap <= data.totalLaps; lap++) {
-      const active = sortLap === lap ? ' sort-active' : '';
-      html += `<th class="th-sort${active}" data-sort="${lap}">L${lap}</th>`;
-    }
+    tp.forEach(pos => {
+      const active = sortLap === pos ? ' sort-active' : '';
+      const label = data.timingPointLabels?.[pos] || String(pos);
+      html += `<th class="th-sort${active}" data-sort="${pos}">L${this._escape(label)}</th>`;
+    });
     html += '<th class="th-sort" data-sort="0">Total</th><th>Best</th><th>Gap</th></tr></thead><tbody>';
     const topEntry = rankings[0];
     const topRider = topEntry ? this._resolveEntry(topEntry) : null;
@@ -175,8 +110,8 @@ const Views = {
       const rider = this._resolveEntry(entry);
       const laps = data.riderLapMap[rider.number] || [];
       html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${this._escape(rider.name)}</td>`;
-      for (let lap = 1; lap <= data.totalLaps; lap++) {
-        const l = laps.find(x => x.lapNumber === lap);
+      tp.forEach(pos => {
+        const l = laps.find(x => x.lapPosition === pos);
         let cls = '', txt = '-';
         if (l && isFinite(l.lapTimeSec)) {
           txt = Parser.secondsToLapTime(l.lapTimeSec);
@@ -184,7 +119,7 @@ const Views = {
           else if (l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
         }
         html += `<td class="time-cell td-lap ${cls}">${txt}</td>`;
-      }
+      });
       const best = data.personalBestMap[rider.number];
       const totalSec = Parser.parseTimeToSeconds(rider.totalTime);
       html += `<td class="time-cell">${rider.totalTime}</td>
@@ -195,7 +130,7 @@ const Views = {
     el.innerHTML = html;
     el.querySelectorAll('.th-sort').forEach(th => {
       th.addEventListener('click', () => {
-        const lap = parseInt(th.dataset.sort);
+        const lap = parseFloat(th.dataset.sort);
         if (window._overallSortLap === lap) {
           window._overallSortLap = 0;
         } else {
@@ -209,17 +144,19 @@ const Views = {
   renderOverallCTTab(data) {
     const el = document.getElementById('tab-overall-ct');
     const sortLap = window._overallCTSortLap || 0;
+    const tp = data.timingPoints || [];
     let rankings;
-    if (sortLap > 0 && sortLap <= data.totalLaps) {
+    if (sortLap > 0 && tp.includes(sortLap)) {
       rankings = data.getCumulativeRankings(sortLap);
     } else {
       rankings = data.getOverallRankings();
     }
     let html = '<table><thead><tr><th class="th-sort" data-sort="0">Pos</th><th>No.</th><th>名前</th>';
-    for (let lap = 1; lap <= data.totalLaps; lap++) {
-      const active = sortLap === lap ? ' sort-active' : '';
-      html += `<th class="th-sort${active}" data-sort="${lap}">CT${lap}</th>`;
-    }
+    tp.forEach(pos => {
+      const active = sortLap === pos ? ' sort-active' : '';
+      const label = data.timingPointLabels?.[pos] || String(pos);
+      html += `<th class="th-sort${active}" data-sort="${pos}">CT${this._escape(label)}</th>`;
+    });
     html += '<th class="th-sort" data-sort="0">Total</th><th>Gap</th></tr></thead><tbody>';
     const topEntry = rankings[0];
     const topRider = topEntry ? this._resolveEntry(topEntry) : null;
@@ -228,12 +165,16 @@ const Views = {
       const rider = this._resolveEntry(entry);
       const laps = data.riderLapMap[rider.number] || [];
       html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${this._escape(rider.name)}</td>`;
-      for (let lap = 1; lap <= data.totalLaps; lap++) {
-        const l = laps.find(x => x.lapNumber === lap);
-        let txt = '-';
-        if (l && isFinite(l.totalTimeSec)) txt = Parser.secondsToTime(l.totalTimeSec);
-        html += `<td class="time-cell">${txt}</td>`;
-      }
+      tp.forEach(pos => {
+        const l = laps.find(x => x.lapPosition === pos);
+        let txt = '-', cls = '';
+        if (l && isFinite(l.totalTimeSec)) {
+          txt = Parser.secondsToTime(l.totalTimeSec);
+          if (isFinite(l.lapTimeSec) && l.lapTimeSec === data.overallBest) cls = 'overall-best';
+          else if (isFinite(l.lapTimeSec) && l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
+        }
+        html += `<td class="time-cell ${cls}">${txt}</td>`;
+      });
       const totalSec = Parser.parseTimeToSeconds(rider.totalTime);
       html += `<td class="time-cell">${rider.totalTime}</td>
         <td class="gap-cell">${Parser.formatGap(totalSec - topTotalSec)}</td></tr>`;
@@ -242,7 +183,7 @@ const Views = {
     el.innerHTML = html;
     el.querySelectorAll('.th-sort').forEach(th => {
       th.addEventListener('click', () => {
-        const lap = parseInt(th.dataset.sort);
+        const lap = parseFloat(th.dataset.sort);
         if (window._overallCTSortLap === lap) {
           window._overallCTSortLap = 0;
         } else {

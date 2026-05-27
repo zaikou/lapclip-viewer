@@ -163,39 +163,45 @@ const Parser = {
       let idx = 0;
       const rawCell = tds[idx++].textContent.trim();
       if (!rawCell) return;
-      let lapNumber, lapPosition;
+      let lapNumber, lapPosition, posLabel;
 
       if (rawCell === 'FINISH') {
         lapNumber = finishPosition || (lapIndex + 1);
         lapPosition = lapNumber;
+        posLabel = 'FINISH';
       } else if (isIntermediate) {
         const interMatch = rawCell.match(/(\d+)周目中間/);
         const compMatch = rawCell.match(/(\d+)周回完了/);
         if (interMatch) {
           lapNumber = parseInt(interMatch[1]);
           lapInterSeen[lapNumber] = (lapInterSeen[lapNumber] || 0) + 1;
-          lapPosition = lapNumber - 1 + (lapInterSeen[lapNumber] / (interPerLap + 1));
+          const num = lapInterSeen[lapNumber], den = interPerLap + 1;
+          lapPosition = parseFloat((lapNumber - 1 + num / den).toFixed(4));
+          posLabel = lapNumber > 1 ? `${lapNumber - 1}+${num}/${den}` : `${num}/${den}`;
         } else if (compMatch) {
           lapNumber = parseInt(compMatch[1]);
           lapPosition = lapNumber;
+          posLabel = String(lapNumber);
         } else {
           const m = rawCell.match(/(\d+)/);
           if (!m) return;
           lapNumber = parseInt(m[1]);
           lapPosition = lapNumber;
+          posLabel = String(lapNumber);
         }
       } else {
         const m = rawCell.match(/(\d+)/);
         if (!m) return;
         lapNumber = parseInt(m[1]);
         lapPosition = lapNumber;
+        posLabel = String(lapNumber);
       }
       lapIndex++;
 
       const rank = hasRankCol ? parseInt(tds[idx++].textContent.trim()) || 0 : 0;
       const lapTime = tds[idx++].textContent.trim();
       const totalTime = tds[idx].textContent.trim();
-      laps.push({ lapNumber, lapPosition, lapRank: rank, lapTime, totalTime, lapTimeSec: this.parseTimeToSeconds(lapTime), totalTimeSec: this.parseTimeToSeconds(totalTime) });
+      laps.push({ lapNumber, lapPosition, posLabel, lapRank: rank, lapTime, totalTime, lapTimeSec: this.parseTimeToSeconds(lapTime), totalTimeSec: this.parseTimeToSeconds(totalTime) });
     });
     return laps;
   },

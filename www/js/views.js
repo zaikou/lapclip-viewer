@@ -1,10 +1,23 @@
 const Views = {
+  // HTML escape utility function
+  _escape(text) {
+    if (typeof text !== 'string') return '';
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+    };
+    return text.replace(/[&<>"']/g, c => map[c]);
+  },
+
   renderEvents(events) {
     const el = document.getElementById('event-list');
     el.innerHTML = events.map(e => `
-      <div class="event-card" data-evt="${e.evtId}">
-        <div class="date">${e.date}</div>
-        <div class="name">${e.name}</div>
+      <div class="event-card" data-evt="${this._escape(String(e.evtId))}">
+        <div class="date">${this._escape(e.date)}</div>
+        <div class="name">${this._escape(e.name)}</div>
       </div>
     `).join('');
     el.querySelectorAll('.event-card').forEach(card => {
@@ -23,7 +36,7 @@ const Views = {
       const result = await Scraper.fetchCategories(evtId);
       titleEl.textContent = result.title || 'カテゴリ選択';
       if (result.categories.length === 0) { el.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">カテゴリが見つかりません</p>'; return; }
-      el.innerHTML = result.categories.map(c => `<button class="cat-btn" data-ctg="${c.ctgId}">${c.name}</button>`).join('');
+      el.innerHTML = result.categories.map(c => `<button class="cat-btn" data-ctg="${this._escape(String(c.ctgId))}">${this._escape(c.name)}</button>`).join('');
       el.querySelectorAll('.cat-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           AppState.selectedCtg = btn.dataset.ctg;
@@ -44,7 +57,7 @@ const Views = {
     if (rider && list.children.length < 200) {
       const div = document.createElement('div');
       div.className = 'progress-item done';
-      div.textContent = `No.${rider.number} ${rider.name}`;
+      div.textContent = `No.${rider.number} ${this._escape(rider.name)}`;
       list.appendChild(div);
       list.scrollTop = list.scrollHeight;
     }
@@ -79,7 +92,7 @@ const Views = {
       if (rankings.length === 0) continue;
       const isOpen = lap <= 3;
       html += `<div class="lap-group">
-        <div class="lap-group-header ${isOpen?'open':''}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <div class="lap-group-header ${isOpen?'open':''}" data-toggle-lap="${lap}">
           <span>Lap ${lap}</span>
           <span class="arrow">&#x25B6;</span>
         </div>
@@ -90,24 +103,24 @@ const Views = {
         if (r.isOverallBest) cls = 'overall-best';
         else if (r.isPersonalBest) cls = 'personal-best';
         html += `<tr class="${cls}"><td class="pos">${r.position}</td><td class="num">${r.rider.number}</td>
-          <td class="name-cell">${r.rider.name}</td>
+          <td class="name-cell">${this._escape(r.rider.name)}</td>
           <td class="time-cell td-lap">${Parser.secondsToLapTime(r.lap.lapTimeSec)}</td>
           <td class="gap-cell">${Parser.formatGap(r.gap)}</td></tr>`;
       });
       html += '</tbody></table></div></div>';
     }
     el.innerHTML = html;
+    el.querySelectorAll('[data-toggle-lap]').forEach(hdr => {
+      hdr.addEventListener('click', () => {
+        hdr.classList.toggle('open');
+        hdr.nextElementSibling.classList.toggle('open');
+      });
+    });
   },
 
   renderCumulativeTab(data) {
     const el = document.getElementById('tab-cumulative');
-    let html = '';
-    for (let lap = 1; lap <= data.totalLaps; lap++) {
-      const rankings = data.getCumulativeRankings(lap);
-      if (rankings.length === 0) continue;
-      const isOpen = lap <= 3;
-      html += `<div class="lap-group">
-        <div class="lap-group-header ${isOpen?'open':''}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+    let html = '';data-toggle-lap="${lap}">
           <span>After Lap ${lap}</span>
           <span class="arrow">&#x25B6;</span>
         </div>
@@ -115,7 +128,19 @@ const Views = {
           <table><thead><tr><th>Pos</th><th>No.</th><th>名前</th><th>Total</th><th>Gap</th></tr></thead><tbody>`;
       rankings.forEach(r => {
         html += `<tr><td class="pos">${r.position}</td><td class="num">${r.rider.number}</td>
-          <td class="name-cell">${r.rider.name}</td>
+          <td class="name-cell">${this._escape(r.rider.name)}</td>
+          <td class="time-cell">${Parser.secondsToTime(r.lap.totalTimeSec)}</td>
+          <td class="gap-cell">${Parser.formatGap(r.gap)}</td></tr>`;
+      });
+      html += '</tbody></table></div></div>';
+    }
+    el.innerHTML = html;
+    el.querySelectorAll('[data-toggle-lap]').forEach(hdr => {
+      hdr.addEventListener('click', () => {
+        hdr.classList.toggle('open');
+        hdr.nextElementSibling.classList.toggle('open');
+      });
+    })me-cell">${r.rider.name}</td>
           <td class="time-cell">${Parser.secondsToTime(r.lap.totalTimeSec)}</td>
           <td class="gap-cell">${Parser.formatGap(r.gap)}</td></tr>`;
       });
@@ -149,7 +174,7 @@ const Views = {
     rankings.forEach(entry => {
       const rider = this._resolveEntry(entry);
       const laps = data.riderLapMap[rider.number] || [];
-      html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${rider.name}</td>`;
+      html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${this._escape(rider.name)}</td>`;
       for (let lap = 1; lap <= data.totalLaps; lap++) {
         const l = laps.find(x => x.lapNumber === lap);
         let cls = '', txt = '-';
@@ -202,7 +227,7 @@ const Views = {
     rankings.forEach(entry => {
       const rider = this._resolveEntry(entry);
       const laps = data.riderLapMap[rider.number] || [];
-      html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${rider.name}</td>`;
+      html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${this._escape(rider.name)}</td>`;
       for (let lap = 1; lap <= data.totalLaps; lap++) {
         const l = laps.find(x => x.lapNumber === lap);
         let txt = '-';

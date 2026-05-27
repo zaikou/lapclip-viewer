@@ -5,7 +5,7 @@
   "bundledWebRuntime": false,
   "server": {
     "android": {
-      "allowMixedContent": true
+      "allowMixedContent": false
     }
   }
 }

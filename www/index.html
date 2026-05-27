@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>LAP CLIP Viewer</title>
 <link rel="stylesheet" href="css/style.css">
+<!-- Content Security Policy for additional security -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https:">
 </head>
 <body>
 
@@ -23,14 +25,14 @@
   </header>
   <main id="event-list" class="scrollable"></main>
   <div class="url-input-bar">
-    <input id="url-input" type="text" placeholder="URLを入力して開く..." onkeydown="if(event.key==='Enter')loadURL()">
-    <button onclick="loadURL()">開く</button>
+    <input id="url-input" type="text" placeholder="URLを入力して開く...">
+    <button id="url-load-btn">開く</button>
   </div>
 </div>
 
 <div id="screen-category" class="screen hidden">
   <header>
-    <button class="back" onclick="goBack()">&#x2039;</button>
+    <button id="back-btn-category" class="back">&#x2039;</button>
     <h1 id="category-title"></h1>
   </header>
   <main id="category-grid" class="grid-2col scrollable"></main>
@@ -38,7 +40,7 @@
 
 <div id="screen-loading" class="screen hidden">
   <header>
-    <button class="back" onclick="goBack()">&#x2039;</button>
+    <button id="back-btn-loading" class="back">&#x2039;</button>
     <h1>データ取得中...</h1>
   </header>
   <main class="loading-content">
@@ -50,9 +52,9 @@
 
 <div id="screen-timing" class="screen hidden">
   <header>
-    <button class="back" onclick="goBack()">&#x2039;</button>
+    <button id="back-btn-timing" class="back">&#x2039;</button>
     <h1 id="timing-title"></h1>
-    <button id="refresh-btn" class="icon-btn" onclick="refreshData()">&#x21bb;</button>
+    <button id="refresh-btn" class="icon-btn">&#x21bb;</button>
   </header>
   <nav id="tab-nav" class="tab-nav">
     <button class="tab-btn active" data-tab="tab-lap">LAP順位</button>
@@ -68,7 +70,7 @@
     <div id="tab-overall-ct" class="tab-pane"></div>
     <div id="tab-chart" class="tab-pane">
       <div class="chart-controls">
-        <input id="chart-search" type="text" placeholder="選手名で追加..." oninput="chartFilter()">
+        <input id="chart-search" type="text" placeholder="選手名で追加...">
       </div>
       <canvas id="lap-chart"></canvas>
       <div id="chart-legend" class="chart-legend"></div>

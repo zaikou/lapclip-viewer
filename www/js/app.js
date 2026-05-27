@@ -4,6 +4,17 @@ const AppState = {
   screenStack: ['splash'],
 };
 
+// Security utility: validate event and category IDs
+function validateEventId(id) {
+  // Allow alphanumeric, hyphens, underscores only
+  return /^[a-zA-Z0-9_-]+$/.test(String(id)) ? id : null;
+}
+
+function validateCategoryId(id) {
+  // Allow alphanumeric, hyphens, underscores only
+  return /^[a-zA-Z0-9_-]+$/.test(String(id)) ? id : null;
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   const el = document.getElementById(id);
@@ -25,7 +36,7 @@ function loadEvents(year) {
     if (events.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--accent-yellow);padding:20px;">イベントが見つかりません<br><span style="font-size:0.8rem;color:var(--text-muted)">通信エラーか、サーバーに接続できません</span></p>'; return; }
     Views.renderEvents(events);
   }).catch(e => {
-    list.innerHTML = '<p style="text-align:center;color:var(--accent-red);padding:20px;">読み込みエラー<br><span style="font-size:0.8rem;">' + (e.message || '') + '</span></p>';
+    list.innerHTML = '<p style="text-align:center;color:var(--accent-red);padding:20px;">読み込みエラー<br><span style="font-size:0.8rem;">データ取得に失敗しました</span></p>';
   });
 }
 
@@ -59,13 +70,15 @@ function loadURL() {
   const qs = raw.includes('?') ? raw.split('?')[1] : raw;
   const params = new URLSearchParams(qs);
   const evt = params.get('evt');
-  if (!evt) { document.getElementById('url-input').placeholder = 'evtパラメータが見つかりません'; return; }
+  if (!evt || !validateEventId(evt)) { document.getElementById('url-input').placeholder = 'evtパラメータが見つかりません'; return; }
   document.getElementById('url-input').value = '';
   AppState.selectedEvt = evt;
   if (params.has('ctg')) {
-    AppState.selectedCtg = params.get('ctg');
+    const ctg = params.get('ctg');
+    if (!validateCategoryId(ctg)) { document.getElementById('url-input').placeholder = 'ctgパラメータが無効です'; return; }
+    AppState.selectedCtg = ctg;
     AppState.ctgName = params.get('ctg');
-    startDataLoad(evt, AppState.selectedCtg, AppState.ctgName);
+    startDataLoad(evt, ctg, AppState.ctgName);
   } else {
     goToCategories(evt);
   }
@@ -157,6 +170,37 @@ function waitForCapacitor() {
 document.addEventListener('DOMContentLoaded', async () => {
   await waitForCapacitor();
   console.log('[app] Capacitor ready, platform:', window.Capacitor?.getPlatform?.());
+  
+  // Set up event listeners for URL input
+  const urlInput = document.getElementById('url-input');
+  const urlLoadBtn = document.getElementById('url-load-btn');
+  if (urlInput) {
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadURL();
+    });
+  }
+  if (urlLoadBtn) {
+    urlLoadBtn.addEventListener('click', loadURL);
+  }
+  
+  // Set up back buttons
+  ['back-btn-category', 'back-btn-loading', 'back-btn-timing'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', goBack);
+  });
+  
+  // Set up refresh button
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', refreshData);
+  }
+  
+  // Set up chart search input
+  const chartSearch = document.getElementById('chart-search');
+  if (chartSearch) {
+    chartSearch.addEventListener('input', chartFilter);
+  }
+  
   loadYearsAndEvents();
   setupNavigation();
   setTimeout(() => {

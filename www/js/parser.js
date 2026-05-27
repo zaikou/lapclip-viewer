@@ -128,32 +128,74 @@ const Parser = {
   parseLapData(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const rows = doc.querySelectorAll('table tr');
-    const laps = [];
     const headerCells = doc.querySelectorAll('table th');
     let hasRankCol = false;
     headerCells.forEach(th => { if (th.textContent.includes('順位')) hasRankCol = true; });
-    let lapIndex = 0;
+
+    // Collect raw cell data for analysis
+    const allRows = [];
     rows.forEach(tr => {
       const tds = tr.querySelectorAll('td');
       if (tds.length < 3) return;
       if (hasRankCol && tds.length < 4) return;
+      allRows.push(tr);
+    });
+
+    // Detect intermediate format ("N周目中間" / "N周回完了")
+    let isIntermediate = false;
+    const interCounts = {};
+    let totalLaps = 0;
+    allRows.forEach(tr => {
+      const rawCell = tr.querySelectorAll('td')[0].textContent.trim();
+      const im = rawCell.match(/(\d+)周目中間/);
+      const cm = rawCell.match(/(\d+)周回完了/);
+      if (im) { isIntermediate = true; interCounts[im[1]] = (interCounts[im[1]] || 0) + 1; }
+      if (cm) totalLaps = Math.max(totalLaps, parseInt(cm[1]));
+    });
+    const interPerLap = Object.keys(interCounts).length > 0 ? Math.max(...Object.values(interCounts)) : 0;
+
+    const laps = [];
+    const lapInterSeen = {};
+    let finishPosition = totalLaps > 0 ? totalLaps : 0;
+    let lapIndex = 0;
+    allRows.forEach(tr => {
+      const tds = tr.querySelectorAll('td');
       let idx = 0;
       const rawCell = tds[idx++].textContent.trim();
       if (!rawCell) return;
-      let lapNumber;
+      let lapNumber, lapPosition;
+
       if (rawCell === 'FINISH') {
-        lapNumber = lapIndex + 1;
+        lapNumber = finishPosition || (lapIndex + 1);
+        lapPosition = lapNumber;
+      } else if (isIntermediate) {
+        const interMatch = rawCell.match(/(\d+)周目中間/);
+        const compMatch = rawCell.match(/(\d+)周回完了/);
+        if (interMatch) {
+          lapNumber = parseInt(interMatch[1]);
+          lapInterSeen[lapNumber] = (lapInterSeen[lapNumber] || 0) + 1;
+          lapPosition = lapNumber - 1 + (lapInterSeen[lapNumber] / (interPerLap + 1));
+        } else if (compMatch) {
+          lapNumber = parseInt(compMatch[1]);
+          lapPosition = lapNumber;
+        } else {
+          const m = rawCell.match(/(\d+)/);
+          if (!m) return;
+          lapNumber = parseInt(m[1]);
+          lapPosition = lapNumber;
+        }
       } else {
-        // Parse "1/3周", "1周", etc.
         const m = rawCell.match(/(\d+)/);
         if (!m) return;
         lapNumber = parseInt(m[1]);
+        lapPosition = lapNumber;
       }
       lapIndex++;
+
       const rank = hasRankCol ? parseInt(tds[idx++].textContent.trim()) || 0 : 0;
       const lapTime = tds[idx++].textContent.trim();
       const totalTime = tds[idx].textContent.trim();
-      laps.push({ lapNumber, lapRank: rank, lapTime, totalTime, lapTimeSec: this.parseTimeToSeconds(lapTime), totalTimeSec: this.parseTimeToSeconds(totalTime) });
+      laps.push({ lapNumber, lapPosition, lapRank: rank, lapTime, totalTime, lapTimeSec: this.parseTimeToSeconds(lapTime), totalTimeSec: this.parseTimeToSeconds(totalTime) });
     });
     return laps;
   },

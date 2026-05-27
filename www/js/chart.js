@@ -83,17 +83,20 @@ class LapChart {
   }
 
   resetZoom() {
-    const maxLaps = this.data ? this.data.totalLaps : 0;
-    let minTime = 0, maxTime = 1;
+    let maxPos = 0, minTime = 0, maxTime = 1;
     if (this.data) {
       this.selectedRiders.forEach(no => {
         (this.data.riderLapMap[no] || []).forEach(l => {
-          if (isFinite(l.totalTimeSec)) { if (l.totalTimeSec < minTime) minTime = l.totalTimeSec; if (l.totalTimeSec > maxTime) maxTime = l.totalTimeSec; }
+          if (isFinite(l.totalTimeSec)) {
+            if (l.lapPosition > maxPos) maxPos = l.lapPosition;
+            if (l.totalTimeSec < minTime) minTime = l.totalTimeSec;
+            if (l.totalTimeSec > maxTime) maxTime = l.totalTimeSec;
+          }
         });
       });
     }
     const pad = (maxTime - minTime) * 0.15 || 30;
-    this.zoom = { xMin: 1, xMax: Math.max(maxLaps, 1), yMin: Math.max(0, minTime - pad), yMax: maxTime + pad };
+    this.zoom = { xMin: 0, xMax: Math.max(maxPos, 1), yMin: Math.max(0, minTime - pad), yMax: maxTime + pad };
   }
 
   setData(data) {
@@ -156,15 +159,17 @@ class LapChart {
     const xScale = (lap) => pad.left + ((lap - z.xMin) / xDomain) * chartW;
     const yScale = (t) => pad.top + chartH - ((t - z.yMin) / yDomain) * chartH;
 
-    // grid lines (vertical, clipped to visible range)
+    // grid lines & x-axis labels at integer lap positions
     ctx.strokeStyle = '#2a2a44';
     ctx.lineWidth = 0.5;
     const lapStart = Math.max(1, Math.ceil(z.xMin));
-    const lapEnd = Math.min(this.data.totalLaps, Math.floor(z.xMax));
+    const lapEnd = Math.floor(z.xMax);
+    ctx.fillStyle = '#8888aa'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
     for (let lap = lapStart; lap <= lapEnd; lap++) {
       const x = xScale(lap);
       if (x >= pad.left && x <= W - pad.right) {
         ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + chartH); ctx.stroke();
+        ctx.fillText(`L${lap}`, x, H - 6);
       }
     }
     // y-axis grid + labels
@@ -177,21 +182,11 @@ class LapChart {
       ctx.fillText(Parser.secondsToTime(val), pad.left - 4, y + 3);
     }
 
-    // x-axis labels (visible range)
-    ctx.fillStyle = '#8888aa'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-    for (let lap = lapStart; lap <= lapEnd; lap++) {
-      const x = xScale(lap);
-      if (x >= pad.left && x <= W - pad.right) {
-        ctx.fillText(`L${lap}`, x, H - 6);
-      }
-    }
-
     // series lines
     const series = [];
     this.selectedRiders.forEach((no, idx) => {
       const laps = riderLapMap[no] || [];
-      const seen = new Set();
-      const pts = laps.filter(l => { if (!isFinite(l.totalTimeSec)) return false; if (seen.has(l.lapNumber)) return false; seen.add(l.lapNumber); return true; }).map(l => ({ lap: l.lapNumber, time: l.totalTimeSec }));
+      const pts = laps.filter(l => isFinite(l.totalTimeSec)).map(l => ({ lap: l.lapPosition, time: l.totalTimeSec }));
       if (pts.length === 0) return;
       const rider = this.data.riders.find(r => r.number === no);
       series.push({ riderNo: no, name: rider ? rider.name : no, pts, color: this.COLORS[idx % this.COLORS.length] });

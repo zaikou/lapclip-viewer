@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LAP CLIP Viewer</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="splash" class="screen">
+  <div class="splash-content">
+    <h1>LAP CLIP Viewer</h1>
+    <p class="sub">F1 Live Timing Style</p>
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<div id="screen-event" class="screen hidden">
+  <header>
+    <h1>LAP CLIP Viewer</h1>
+    <nav id="year-tabs" class="year-tabs"></nav>
+  </header>
+  <main id="event-list" class="scrollable"></main>
+</div>
+
+<div id="screen-category" class="screen hidden">
+  <header>
+    <button class="back" onclick="goBack()">&#x2039;</button>
+    <h1 id="category-title"></h1>
+  </header>
+  <main id="category-grid" class="grid-2col scrollable"></main>
+</div>
+
+<div id="screen-loading" class="screen hidden">
+  <header>
+    <h1>データ取得中...</h1>
+  </header>
+  <main class="loading-content">
+    <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+    <p id="progress-text">0 / 0 選手</p>
+    <div id="progress-list" class="progress-list"></div>
+  </main>
+</div>
+
+<div id="screen-timing" class="screen hidden">
+  <header>
+    <button class="back" onclick="goBack()">&#x2039;</button>
+    <h1 id="timing-title"></h1>
+    <button id="refresh-btn" class="icon-btn" onclick="refreshData()">&#x21bb;</button>
+  </header>
+  <nav id="tab-nav" class="tab-nav">
+    <button class="tab-btn active" data-tab="tab-lap">LAP順位</button>
+    <button class="tab-btn" data-tab="tab-cumulative">経過時間</button>
+    <button class="tab-btn" data-tab="tab-overall">総合</button>
+    <button class="tab-btn" data-tab="tab-chart">グラフ</button>
+  </nav>
+  <main class="tab-content scrollable">
+    <div id="tab-lap" class="tab-pane active"></div>
+    <div id="tab-cumulative" class="tab-pane"></div>
+    <div id="tab-overall" class="tab-pane"></div>
+    <div id="tab-chart" class="tab-pane">
+      <div class="chart-controls">
+        <input id="chart-search" type="text" placeholder="選手名で追加..." oninput="chartFilter()">
+      </div>
+      <canvas id="lap-chart"></canvas>
+      <div id="chart-legend" class="chart-legend"></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/parser.js"></script>
+<script src="js/processor.js"></script>
+<script src="js/views.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/scraper.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

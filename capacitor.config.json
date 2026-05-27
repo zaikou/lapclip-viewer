@@ -1,0 +1,11 @@
+{
+  "appId": "com.lapclip.viewer",
+  "appName": "LAP CLIP Viewer",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "android": {
+      "allowMixedContent": true
+    }
+  }
+}

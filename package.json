@@ -1,0 +1,19 @@
+{
+  "name": "lapclip-viewer",
+  "version": "1.0.0",
+  "description": "LAP CLIP F1-style live timing viewer",
+  "private": true,
+  "scripts": {
+    "build": "npx cap sync",
+    "open": "npx cap open android",
+    "apk": "npx cap build android",
+    "dev": "npx cap run android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}

@@ -115,7 +115,7 @@ const Views = {
         let cls = '', txt = '-';
         if (l && isFinite(l.lapTimeSec)) {
           txt = Parser.secondsToLapTime(l.lapTimeSec);
-          if (l.lapTimeSec === data.overallBest) cls = 'overall-best';
+          if (l.lapTimeSec === (data.timingPointBest?.[pos] ?? data.overallBest)) cls = 'overall-best';
           else if (l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
         }
         html += `<td class="time-cell td-lap ${cls}">${txt}</td>`;
@@ -170,7 +170,7 @@ const Views = {
         let txt = '-', cls = '';
         if (l && isFinite(l.totalTimeSec)) {
           txt = Parser.secondsToTime(l.totalTimeSec);
-          if (isFinite(l.lapTimeSec) && l.lapTimeSec === data.overallBest) cls = 'overall-best';
+          if (isFinite(l.lapTimeSec) && l.lapTimeSec === (data.timingPointBest?.[pos] ?? data.overallBest)) cls = 'overall-best';
           else if (isFinite(l.lapTimeSec) && l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
         }
         html += `<td class="time-cell ${cls}">${txt}</td>`;
@@ -195,7 +195,7 @@ const Views = {
   },
 
   renderChartTab(data) {
-    if (window.chartInstance) {
+    if (chartInstance) {
       chartInstance.setData(data);
       chartInstance.draw();
     }

@@ -30,13 +30,19 @@ const Processor = {
     }
     const timingPoints = Array.from(posSet).sort((a, b) => a - b);
     const timingPointLabels = {};
+    const timingPointBest = {};
     for (const r of riders) {
       (riderLapMap[r.number] || []).forEach(l => {
         if (!(l.lapPosition in timingPointLabels) && l.posLabel) timingPointLabels[l.lapPosition] = l.posLabel;
+        if (isFinite(l.lapTimeSec)) {
+          if (!(l.lapPosition in timingPointBest) || l.lapTimeSec < timingPointBest[l.lapPosition]) {
+            timingPointBest[l.lapPosition] = l.lapTimeSec;
+          }
+        }
       });
     }
     return {
-      riders, lapDataMap, riderLapMap, personalBestMap, overallBest, maxLaps, totalLaps, timingPoints, timingPointLabels,
+      riders, lapDataMap, riderLapMap, personalBestMap, overallBest, maxLaps, totalLaps, timingPoints, timingPointLabels, timingPointBest,
       getLapRankings(pos) {
         const entries = [];
         for (const r of riders) {

@@ -316,4 +316,5 @@ class LapChart {
 let chartInstance = null;
 document.addEventListener('DOMContentLoaded', () => {
   chartInstance = new LapChart('lap-chart');
+  window.chartInstance = chartInstance;
 });

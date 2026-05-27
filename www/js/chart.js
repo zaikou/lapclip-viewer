@@ -313,8 +313,4 @@ class LapChart {
   }
 }
 
-let chartInstance = null;
-document.addEventListener('DOMContentLoaded', () => {
-  chartInstance = new LapChart('lap-chart');
-  window.chartInstance = chartInstance;
-});
+var chartInstance = new LapChart('lap-chart');

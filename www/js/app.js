@@ -130,7 +130,7 @@ function setupNavigation() {
       btn.classList.add('active');
       document.getElementById(btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'tab-chart' && chartInstance && AppState.currentData) {
-        setTimeout(() => { chartInstance.setData(AppState.currentData); chartInstance.draw(); }, 100);
+        requestAnimationFrame(() => { chartInstance.setData(AppState.currentData); chartInstance.draw(); });
       }
     });
   });

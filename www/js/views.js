@@ -115,8 +115,9 @@ const Views = {
         let cls = '', txt = '-';
         if (l && isFinite(l.lapTimeSec)) {
           txt = Parser.secondsToLapTime(l.lapTimeSec);
-          if (l.lapTimeSec === (data.timingPointBest?.[pos] ?? data.overallBest)) cls = 'overall-best';
-          else if (l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
+          if (l.lapTimeSec === (data.timingPointBest?.[pos] ?? data.overallBest)) cls = 'tp-best';
+          else if (l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'pb-best';
+          else cls = 'slower';
         }
         html += `<td class="time-cell td-lap ${cls}">${txt}</td>`;
       });
@@ -170,8 +171,9 @@ const Views = {
         let txt = '-', cls = '';
         if (l && isFinite(l.totalTimeSec)) {
           txt = Parser.secondsToTime(l.totalTimeSec);
-          if (isFinite(l.lapTimeSec) && l.lapTimeSec === (data.timingPointBest?.[pos] ?? data.overallBest)) cls = 'overall-best';
-          else if (isFinite(l.lapTimeSec) && l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
+          if (isFinite(l.lapTimeSec) && l.lapTimeSec === (data.timingPointBest?.[pos] ?? data.overallBest)) cls = 'tp-best';
+          else if (isFinite(l.lapTimeSec) && l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'pb-best';
+          else if (isFinite(l.lapTimeSec)) cls = 'slower';
         }
         html += `<td class="time-cell ${cls}">${txt}</td>`;
       });

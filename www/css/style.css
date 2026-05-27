@@ -70,9 +70,9 @@ tr:active { background: var(--bg-hover); }
 .name-cell { text-align: left; max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
 .time-cell { text-align: right; font-variant-numeric: tabular-nums; }
 .gap-cell { color: var(--text-secondary); text-align: right; }
-.overall-best { background: rgba(171, 71, 188, 0.2); }
-.overall-best .time-cell { color: #ce93d8; font-weight: 700; }
-.personal-best .time-cell { color: var(--accent-green); font-weight: 600; }
+.tp-best { background: rgba(171, 71, 188, 0.2); color: #ce93d8; font-weight: 700; }
+.pb-best { color: var(--accent-green); font-weight: 600; }
+.slower { color: var(--accent-yellow); }
 .td-lap { min-width: 48px; }
 /* accordion */
 .lap-group { margin-bottom: 2px; }

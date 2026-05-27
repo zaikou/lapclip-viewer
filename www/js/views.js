@@ -197,9 +197,9 @@ const Views = {
   },
 
   renderChartTab(data) {
-    if (chartInstance) {
-      chartInstance.setData(data);
-      chartInstance.draw();
+    if (window.chartInstance) {
+      window.chartInstance.setData(data);
+      window.chartInstance.draw();
     }
   }
 };

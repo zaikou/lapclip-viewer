@@ -103,9 +103,9 @@ function refreshData() {
 
 function chartFilter() {
   const q = document.getElementById('chart-search').value.trim();
-  if (!q || !AppState.currentData || !chartInstance) return;
+  if (!q || !AppState.currentData || !window.chartInstance) return;
   const rider = AppState.currentData.riders.find(r => r.name.includes(q) || r.number === q);
-  if (rider) { chartInstance.addRider(rider.number); document.getElementById('chart-search').value = ''; }
+  if (rider) { window.chartInstance.addRider(rider.number); document.getElementById('chart-search').value = ''; }
 }
 
 function loadYearsAndEvents() {
@@ -129,21 +129,22 @@ function setupNavigation() {
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(btn.dataset.tab).classList.add('active');
-      if (btn.dataset.tab === 'tab-chart' && chartInstance && AppState.currentData) {
-        requestAnimationFrame(() => { chartInstance.setData(AppState.currentData); chartInstance.draw(); });
+      if (btn.dataset.tab === 'tab-chart' && window.chartInstance && AppState.currentData) {
+        requestAnimationFrame(() => { window.chartInstance.setData(AppState.currentData); window.chartInstance.draw(); });
       }
     });
   });
 
   document.addEventListener('click', (e) => {
     const row = e.target.closest('tr');
-    if (!row || !chartInstance || !AppState.currentData) return;
+    if (!row || !window.chartInstance || !AppState.currentData) return;
     const numCell = row.querySelector('.num');
     if (!numCell) return;
     const no = numCell.textContent.trim();
     if (AppState.currentData.riders.some(r => r.number === no)) {
-      document.querySelector('.tab-btn[data-tab="tab-chart"]')?.click();
-      chartInstance.toggleRider(no);
+      const tabBtn = document.querySelector('.tab-btn[data-tab="tab-chart"]');
+      if (tabBtn) tabBtn.click();
+      window.chartInstance.toggleRider(no);
     }
   });
 }

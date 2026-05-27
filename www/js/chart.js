@@ -313,4 +313,8 @@ class LapChart {
   }
 }
 
-var chartInstance = new LapChart('lap-chart');
+try {
+  var chartInstance = new LapChart('lap-chart');
+} catch (e) {
+  console.error('[chart] init error:', e);
+}

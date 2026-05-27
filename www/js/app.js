@@ -30,6 +30,7 @@ function goBack() {
 }
 
 function loadEvents(year) {
+  Scraper.resetAbort();
   const list = document.getElementById('event-list');
   list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">読み込み中...</p>';
   Scraper.fetchEvents(year).then(events => {
@@ -85,6 +86,7 @@ function loadURL() {
 }
 
 async function goToCategories(evtId) {
+  Scraper.resetAbort();
   AppState.screenStack.push('screen-category');
   showScreen('screen-category');
   await Views.loadCategories(evtId);

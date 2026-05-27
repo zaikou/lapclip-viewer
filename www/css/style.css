@@ -60,6 +60,9 @@ header h1 { font-size: 1.1rem; font-weight: 600; flex: 1; }
 /* tables */
 table { width: 100%; border-collapse: collapse; font-size: 0.75rem; font-family: 'SF Mono','Consolas','Courier New',monospace; }
 th { background: var(--bg-secondary); color: var(--text-secondary); padding: 5px 3px; text-align: center; position: sticky; top: 0; z-index: 1; font-weight: 500; font-size: 0.7rem; }
+.th-sort { cursor: pointer; user-select: none; }
+.th-sort:hover { background: var(--bg-hover); }
+.th-sort.sort-active { color: var(--accent-yellow); background: var(--bg-hover); }
 td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
 tr:active { background: var(--bg-hover); }
 .pos { color: var(--text-secondary); width: 24px; }

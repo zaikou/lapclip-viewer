@@ -79,6 +79,8 @@ async function goToCategories(evtId) {
 
 function refreshData() {
   if (!AppState.selectedEvt || !AppState.selectedCtg) return;
+  window._overallSortLap = 0;
+  window._overallCTSortLap = 0;
   startDataLoad(AppState.selectedEvt, AppState.selectedCtg, AppState.ctgName);
 }
 

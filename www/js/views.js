@@ -55,7 +55,7 @@ const Views = {
     const hasLapData = data.totalLaps > 0;
     // Show/hide tabs based on whether lap data exists
     document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.style.display = (!hasLapData && (i === 0 || i === 1 || i === 3)) ? 'none' : '';
+      btn.style.display = (!hasLapData && (i === 0 || i === 1 || i === 3 || i === 4)) ? 'none' : '';
     });
     if (!hasLapData) {
       // No lap data: show only overall tab
@@ -67,6 +67,7 @@ const Views = {
     this.renderLapTab(data);
     this.renderCumulativeTab(data);
     this.renderOverallTab(data);
+    this.renderOverallCTTab(data);
     this.renderChartTab(data);
   },
 
@@ -125,10 +126,21 @@ const Views = {
 
   renderOverallTab(data) {
     const el = document.getElementById('tab-overall');
-    const rankings = data.getOverallRankings();
-    let html = '<table><thead><tr><th>Pos</th><th>No.</th><th>名前</th>';
-    for (let lap = 1; lap <= data.totalLaps; lap++) html += `<th>L${lap}</th>`;
+    const sortLap = window._overallSortLap || 0;
+    let rankings;
+    if (sortLap > 0 && sortLap <= data.totalLaps) {
+      rankings = data.getCumulativeRankings(sortLap);
+    } else {
+      rankings = data.getOverallRankings();
+    }
+    let html = '<table><thead><tr><th class="th-sort" data-sort="0">Pos</th><th>No.</th><th>名前</th>';
+    for (let lap = 1; lap <= data.totalLaps; lap++) {
+      const active = sortLap === lap ? ' sort-active' : '';
+      html += `<th class="th-sort${active}" data-sort="${lap}">L${lap}</th>`;
+    }
     html += '<th>Total</th><th>Best</th><th>Gap</th></tr></thead><tbody>';
+    const topRider = rankings[0];
+    const topTotalSec = topRider ? Parser.parseTimeToSeconds(topRider.totalTime) : 0;
     rankings.forEach(r => {
       const laps = data.riderLapMap[r.number] || [];
       html += `<tr><td class="pos">${r.position}</td><td class="num">${r.number}</td><td class="name-cell">${r.name}</td>`;
@@ -144,13 +156,69 @@ const Views = {
       }
       const best = data.personalBestMap[r.number];
       const totalSec = Parser.parseTimeToSeconds(r.totalTime);
-      const topSec = Parser.parseTimeToSeconds(rankings[0].totalTime);
       html += `<td class="time-cell">${r.totalTime}</td>
         <td class="time-cell" style="color:${isFinite(best)?'var(--accent-green)':'inherit'}">${isFinite(best)?Parser.secondsToLapTime(best):'-'}</td>
-        <td class="gap-cell">${Parser.formatGap(totalSec - topSec)}</td></tr>`;
+        <td class="gap-cell">${Parser.formatGap(totalSec - topTotalSec)}</td></tr>`;
     });
     html += '</tbody></table>';
     el.innerHTML = html;
+    // Bind click handlers for sortable headers
+    el.querySelectorAll('.th-sort').forEach(th => {
+      th.addEventListener('click', () => {
+        const lap = parseInt(th.dataset.sort);
+        if (window._overallSortLap === lap) {
+          window._overallSortLap = 0;
+        } else {
+          window._overallSortLap = lap;
+        }
+        this.renderOverallTab(data);
+      });
+    });
+  },
+
+  renderOverallCTTab(data) {
+    const el = document.getElementById('tab-overall-ct');
+    const sortLap = window._overallCTSortLap || 0;
+    let rankings;
+    if (sortLap > 0 && sortLap <= data.totalLaps) {
+      rankings = data.getCumulativeRankings(sortLap);
+    } else {
+      rankings = data.getOverallRankings();
+    }
+    let html = '<table><thead><tr><th class="th-sort" data-sort="0">Pos</th><th>No.</th><th>名前</th>';
+    for (let lap = 1; lap <= data.totalLaps; lap++) {
+      const active = sortLap === lap ? ' sort-active' : '';
+      html += `<th class="th-sort${active}" data-sort="${lap}">CT${lap}</th>`;
+    }
+    html += '<th>Total</th><th>Gap</th></tr></thead><tbody>';
+    const topRider = rankings[0];
+    const topTotalSec = topRider ? Parser.parseTimeToSeconds(topRider.totalTime) : 0;
+    rankings.forEach(r => {
+      const laps = data.riderLapMap[r.number] || [];
+      html += `<tr><td class="pos">${r.position}</td><td class="num">${r.number}</td><td class="name-cell">${r.name}</td>`;
+      for (let lap = 1; lap <= data.totalLaps; lap++) {
+        const l = laps.find(x => x.lapNumber === lap);
+        let txt = '-';
+        if (l && isFinite(l.totalTimeSec)) txt = Parser.secondsToTime(l.totalTimeSec);
+        html += `<td class="time-cell">${txt}</td>`;
+      }
+      const totalSec = Parser.parseTimeToSeconds(r.totalTime);
+      html += `<td class="time-cell">${r.totalTime}</td>
+        <td class="gap-cell">${Parser.formatGap(totalSec - topTotalSec)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+    el.querySelectorAll('.th-sort').forEach(th => {
+      th.addEventListener('click', () => {
+        const lap = parseInt(th.dataset.sort);
+        if (window._overallCTSortLap === lap) {
+          window._overallCTSortLap = 0;
+        } else {
+          window._overallCTSortLap = lap;
+        }
+        this.renderOverallCTTab(data);
+      });
+    });
   },
 
   renderChartTab(data) {

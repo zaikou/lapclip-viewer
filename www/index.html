@@ -58,12 +58,14 @@
     <button class="tab-btn active" data-tab="tab-lap">LAP順位</button>
     <button class="tab-btn" data-tab="tab-cumulative">経過時間</button>
     <button class="tab-btn" data-tab="tab-overall">総合</button>
+    <button class="tab-btn" data-tab="tab-overall-ct">総合（経過時間）</button>
     <button class="tab-btn" data-tab="tab-chart">グラフ</button>
   </nav>
   <main class="tab-content scrollable">
     <div id="tab-lap" class="tab-pane active"></div>
     <div id="tab-cumulative" class="tab-pane"></div>
     <div id="tab-overall" class="tab-pane"></div>
+    <div id="tab-overall-ct" class="tab-pane"></div>
     <div id="tab-chart" class="tab-pane">
       <div class="chart-controls">
         <input id="chart-search" type="text" placeholder="選手名で追加..." oninput="chartFilter()">

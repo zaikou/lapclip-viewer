@@ -52,19 +52,18 @@ class LapChart {
       ctx.fillStyle = '#8888aa';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('LAP順位タブの選手をタップしてグラフに追加', W/2, H/2);
+      ctx.fillText('総合タブの選手をタップしてグラフに追加', W/2, H/2);
       return;
     }
 
     const riderLapMap = this.data.riderLapMap;
-    const overallBest = this.data.overallBest;
     const maxLaps = this.data.totalLaps;
 
     let minTime = Infinity, maxTime = 0;
     const series = [];
     this.selectedRiders.forEach((no, idx) => {
       const laps = riderLapMap[no] || [];
-      const pts = laps.filter(l => isFinite(l.lapTimeSec)).map(l => ({ lap: l.lapNumber, time: l.lapTimeSec }));
+      const pts = laps.filter(l => isFinite(l.totalTimeSec)).map(l => ({ lap: l.lapNumber, time: l.totalTimeSec }));
       if (pts.length === 0) return;
       pts.forEach(p => { if (p.time < minTime) minTime = p.time; if (p.time > maxTime) maxTime = p.time; });
       const rider = this.data.riders.find(r => r.number === no);
@@ -93,7 +92,7 @@ class LapChart {
       ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
       ctx.fillStyle = '#8888aa'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
       const val = yMax - (i / ySteps) * (yMax - yMin);
-      ctx.fillText(Parser.secondsToLapTime(val), pad.left - 4, y + 3);
+      ctx.fillText(Parser.secondsToTime(val), pad.left - 4, y + 3);
     }
 
     // x-axis labels
@@ -102,15 +101,7 @@ class LapChart {
       ctx.fillText(`L${lap}`, xScale(lap), H - 6);
     }
 
-    // overall best line (purple dashed)
-    ctx.strokeStyle = '#ab47bc';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 3]);
-    const bestY = yScale(overallBest);
-    ctx.beginPath(); ctx.moveTo(pad.left, bestY); ctx.lineTo(W - pad.right, bestY); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#ab47bc'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText('Best ' + Parser.secondsToLapTime(overallBest), W - pad.right - 80, bestY - 2);
+    // overall best line (purple dashed) — not shown for cumulative time
 
     // series lines
     series.forEach(s => {
@@ -130,7 +121,7 @@ class LapChart {
         const y = yScale(p.time);
         ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = s.color; ctx.fill();
         ctx.fillStyle = '#e8e8f0'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(Parser.secondsToLapTime(p.time), x, y - 8);
+        ctx.fillText(Parser.secondsToTime(p.time), x, y - 8);
       });
     });
 

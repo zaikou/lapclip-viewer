@@ -93,7 +93,7 @@ tr:active { background: var(--bg-hover); }
 .chart-legend-item .swatch { width: 10px; height: 10px; border-radius: 2px; }
 .chart-legend-item .close { margin-left: 4px; color: var(--text-muted); cursor: pointer; }
 /* zoom sliders */
-.chart-zoom-controls { padding: 2px 0 0; }
+.chart-zoom-controls { padding: 2px 24px 0; }
 .zoom-axis { position: relative; }
 .zoom-axis label { display: block; font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 1px; }
 /* chart area (y-axis slider + canvas) */

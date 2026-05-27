@@ -24,7 +24,7 @@ const Parser = {
     const cats = [];
     doc.querySelectorAll('#acMenu dd a').forEach(a => {
       const href = a.getAttribute('href') || '';
-      const m = href.match(/ctg=(\d+)/);
+      const m = href.match(/[?&]ctg=([^&]+)/);
       if (!m) return;
       cats.push({
         ctgId: m[1],

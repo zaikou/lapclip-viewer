@@ -124,6 +124,10 @@ const Views = {
     el.innerHTML = html;
   },
 
+  _resolveEntry(entry) {
+    return entry.rider || entry;
+  },
+
   renderOverallTab(data) {
     const el = document.getElementById('tab-overall');
     const sortLap = window._overallSortLap || 0;
@@ -139,30 +143,31 @@ const Views = {
       html += `<th class="th-sort${active}" data-sort="${lap}">L${lap}</th>`;
     }
     html += '<th>Total</th><th>Best</th><th>Gap</th></tr></thead><tbody>';
-    const topRider = rankings[0];
+    const topEntry = rankings[0];
+    const topRider = topEntry ? this._resolveEntry(topEntry) : null;
     const topTotalSec = topRider ? Parser.parseTimeToSeconds(topRider.totalTime) : 0;
-    rankings.forEach(r => {
-      const laps = data.riderLapMap[r.number] || [];
-      html += `<tr><td class="pos">${r.position}</td><td class="num">${r.number}</td><td class="name-cell">${r.name}</td>`;
+    rankings.forEach(entry => {
+      const rider = this._resolveEntry(entry);
+      const laps = data.riderLapMap[rider.number] || [];
+      html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${rider.name}</td>`;
       for (let lap = 1; lap <= data.totalLaps; lap++) {
         const l = laps.find(x => x.lapNumber === lap);
         let cls = '', txt = '-';
         if (l && isFinite(l.lapTimeSec)) {
           txt = Parser.secondsToLapTime(l.lapTimeSec);
           if (l.lapTimeSec === data.overallBest) cls = 'overall-best';
-          else if (l.lapTimeSec === data.personalBestMap[r.number]) cls = 'personal-best';
+          else if (l.lapTimeSec === data.personalBestMap[rider.number]) cls = 'personal-best';
         }
         html += `<td class="time-cell td-lap ${cls}">${txt}</td>`;
       }
-      const best = data.personalBestMap[r.number];
-      const totalSec = Parser.parseTimeToSeconds(r.totalTime);
-      html += `<td class="time-cell">${r.totalTime}</td>
+      const best = data.personalBestMap[rider.number];
+      const totalSec = Parser.parseTimeToSeconds(rider.totalTime);
+      html += `<td class="time-cell">${rider.totalTime}</td>
         <td class="time-cell" style="color:${isFinite(best)?'var(--accent-green)':'inherit'}">${isFinite(best)?Parser.secondsToLapTime(best):'-'}</td>
         <td class="gap-cell">${Parser.formatGap(totalSec - topTotalSec)}</td></tr>`;
     });
     html += '</tbody></table>';
     el.innerHTML = html;
-    // Bind click handlers for sortable headers
     el.querySelectorAll('.th-sort').forEach(th => {
       th.addEventListener('click', () => {
         const lap = parseInt(th.dataset.sort);
@@ -191,19 +196,21 @@ const Views = {
       html += `<th class="th-sort${active}" data-sort="${lap}">CT${lap}</th>`;
     }
     html += '<th>Total</th><th>Gap</th></tr></thead><tbody>';
-    const topRider = rankings[0];
+    const topEntry = rankings[0];
+    const topRider = topEntry ? this._resolveEntry(topEntry) : null;
     const topTotalSec = topRider ? Parser.parseTimeToSeconds(topRider.totalTime) : 0;
-    rankings.forEach(r => {
-      const laps = data.riderLapMap[r.number] || [];
-      html += `<tr><td class="pos">${r.position}</td><td class="num">${r.number}</td><td class="name-cell">${r.name}</td>`;
+    rankings.forEach(entry => {
+      const rider = this._resolveEntry(entry);
+      const laps = data.riderLapMap[rider.number] || [];
+      html += `<tr><td class="pos">${entry.position}</td><td class="num">${rider.number}</td><td class="name-cell">${rider.name}</td>`;
       for (let lap = 1; lap <= data.totalLaps; lap++) {
         const l = laps.find(x => x.lapNumber === lap);
         let txt = '-';
         if (l && isFinite(l.totalTimeSec)) txt = Parser.secondsToTime(l.totalTimeSec);
         html += `<td class="time-cell">${txt}</td>`;
       }
-      const totalSec = Parser.parseTimeToSeconds(r.totalTime);
-      html += `<td class="time-cell">${r.totalTime}</td>
+      const totalSec = Parser.parseTimeToSeconds(rider.totalTime);
+      html += `<td class="time-cell">${rider.totalTime}</td>
         <td class="gap-cell">${Parser.formatGap(totalSec - topTotalSec)}</td></tr>`;
     });
     html += '</tbody></table>';

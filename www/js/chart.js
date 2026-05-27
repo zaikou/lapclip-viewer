@@ -190,7 +190,8 @@ class LapChart {
     const series = [];
     this.selectedRiders.forEach((no, idx) => {
       const laps = riderLapMap[no] || [];
-      const pts = laps.filter(l => isFinite(l.totalTimeSec)).map(l => ({ lap: l.lapNumber, time: l.totalTimeSec }));
+      const seen = new Set();
+      const pts = laps.filter(l => { if (!isFinite(l.totalTimeSec)) return false; if (seen.has(l.lapNumber)) return false; seen.add(l.lapNumber); return true; }).map(l => ({ lap: l.lapNumber, time: l.totalTimeSec }));
       if (pts.length === 0) return;
       const rider = this.data.riders.find(r => r.number === no);
       series.push({ riderNo: no, name: rider ? rider.name : no, pts, color: this.COLORS[idx % this.COLORS.length] });

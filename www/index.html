@@ -71,29 +71,31 @@
       <div class="chart-controls">
         <input id="chart-search" type="text" placeholder="選手名で追加...">
       </div>
-      <div class="chart-zoom-controls">
-        <div class="zoom-axis">
-          <label>横軸（ラップ）</label>
-          <div class="range-slider" id="x-range">
-            <div class="range-track"></div>
-            <div class="range-fill"></div>
-            <input type="range" class="range-min" id="z-x-min" min="0" max="10" step="0.1" value="0">
-            <input type="range" class="range-max" id="z-x-max" min="0" max="10" step="0.1" value="10">
-          </div>
-          <span class="range-label" id="z-x-label">L0.0 – L10.0</span>
-        </div>
+      <div class="chart-area">
         <div class="zoom-axis vertical">
-          <label>縦軸（経過時間）</label>
           <div class="range-slider vertical" id="y-range">
             <div class="range-track"></div>
             <div class="range-fill"></div>
             <input type="range" class="range-min" id="z-y-min" min="0" max="3600" step="1" value="0">
             <input type="range" class="range-max" id="z-y-max" min="0" max="3600" step="1" value="3600">
           </div>
-          <span class="range-label" id="z-y-label">0:00 – 1:00:00</span>
+          <span class="range-label" id="z-y-label">0:00<br>–<br>1:00:00</span>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="lap-chart"></canvas>
         </div>
       </div>
-      <canvas id="lap-chart"></canvas>
+      <div class="chart-zoom-controls">
+        <div class="zoom-axis">
+          <span class="range-label" id="z-x-label">L0.0 – L10.0</span>
+          <div class="range-slider" id="x-range">
+            <div class="range-track"></div>
+            <div class="range-fill"></div>
+            <input type="range" class="range-min" id="z-x-min" min="0" max="10" step="0.1" value="0">
+            <input type="range" class="range-max" id="z-x-max" min="0" max="10" step="0.1" value="10">
+          </div>
+        </div>
+      </div>
       <div id="chart-legend" class="chart-legend"></div>
     </div>
   </main>

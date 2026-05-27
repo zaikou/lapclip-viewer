@@ -120,7 +120,13 @@ const Views = {
 
   renderCumulativeTab(data) {
     const el = document.getElementById('tab-cumulative');
-    let html = '';data-toggle-lap="${lap}">
+    let html = '';
+    for (let lap = 1; lap <= data.totalLaps; lap++) {
+      const rankings = data.getCumulativeRankings(lap);
+      if (rankings.length === 0) continue;
+      const isOpen = lap <= 3;
+      html += `<div class="lap-group">
+        <div class="lap-group-header ${isOpen?'open':''}" data-toggle-lap="${lap}">
           <span>After Lap ${lap}</span>
           <span class="arrow">&#x25B6;</span>
         </div>
@@ -140,13 +146,7 @@ const Views = {
         hdr.classList.toggle('open');
         hdr.nextElementSibling.classList.toggle('open');
       });
-    })me-cell">${r.rider.name}</td>
-          <td class="time-cell">${Parser.secondsToTime(r.lap.totalTimeSec)}</td>
-          <td class="gap-cell">${Parser.formatGap(r.gap)}</td></tr>`;
-      });
-      html += '</tbody></table></div></div>';
-    }
-    el.innerHTML = html;
+    });
   },
 
   _resolveEntry(entry) {

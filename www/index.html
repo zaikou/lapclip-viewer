@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>LAP CLIP Viewer</title>
 <link rel="stylesheet" href="css/style.css">
-<!-- Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' file:; style-src 'unsafe-inline' file:; img-src data: file:; connect-src https://matrix-sports.jp https://matrix-inc.co.jp; base-uri 'none'; form-action 'none'">
+<!-- Security: input validation in app.js; CSP omitted for file:// compat -->
 </head>
 <body>
 
@@ -23,11 +22,11 @@
     <h1>LAP CLIP Viewer</h1>
     <nav id="year-tabs" class="year-tabs"></nav>
   </header>
-  <main id="event-list" class="scrollable"></main>
   <div class="url-input-bar">
     <input id="url-input" type="text" placeholder="URLを入力して開く...">
     <button id="url-load-btn">開く</button>
   </div>
+  <main id="event-list" class="scrollable"></main>
 </div>
 
 <div id="screen-category" class="screen hidden">

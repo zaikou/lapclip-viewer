@@ -75,10 +75,10 @@ class LapChart {
     const xPct2 = ((z.xMax - parseFloat(this._xMinEl.min)) / (parseFloat(this._xMinEl.max) - parseFloat(this._xMinEl.min) || 1)) * 100;
     this._xFill.style.left = xPct + '%';
     this._xFill.style.width = (xPct2 - xPct) + '%';
-    const yPct = ((z.yMin - parseFloat(this._yMinEl.min)) / (parseFloat(this._yMinEl.max) - parseFloat(this._yMinEl.min) || 1)) * 100;
-    const yPct2 = ((z.yMax - parseFloat(this._yMinEl.min)) / (parseFloat(this._yMinEl.max) - parseFloat(this._yMinEl.min) || 1)) * 100;
-    this._yFill.style.left = yPct + '%';
-    this._yFill.style.width = (yPct2 - yPct) + '%';
+    const yLo = parseFloat(this._yMinEl.min);
+    const yRng = parseFloat(this._yMinEl.max) - yLo || 1;
+    this._yFill.style.bottom = ((z.yMin - yLo) / yRng * 100) + '%';
+    this._yFill.style.height = ((z.yMax - z.yMin) / yRng * 100) + '%';
   }
 
   _dataBounds() {

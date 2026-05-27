@@ -53,6 +53,30 @@ async function startDataLoad(evtId, ctgId, ctgName) {
   }
 }
 
+function loadURL() {
+  const raw = document.getElementById('url-input').value.trim();
+  if (!raw) return;
+  const qs = raw.includes('?') ? raw.split('?')[1] : raw;
+  const params = new URLSearchParams(qs);
+  const evt = params.get('evt');
+  if (!evt) { document.getElementById('url-input').placeholder = 'evtパラメータが見つかりません'; return; }
+  document.getElementById('url-input').value = '';
+  AppState.selectedEvt = evt;
+  if (params.has('ctg')) {
+    AppState.selectedCtg = params.get('ctg');
+    AppState.ctgName = params.get('ctg');
+    startDataLoad(evt, AppState.selectedCtg, AppState.ctgName);
+  } else {
+    goToCategories(evt);
+  }
+}
+
+async function goToCategories(evtId) {
+  AppState.screenStack.push('screen-category');
+  showScreen('screen-category');
+  await Views.loadCategories(evtId);
+}
+
 function refreshData() {
   if (!AppState.selectedEvt || !AppState.selectedCtg) return;
   startDataLoad(AppState.selectedEvt, AppState.selectedCtg, AppState.ctgName);

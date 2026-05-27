@@ -9,10 +9,8 @@ const Views = {
     `).join('');
     el.querySelectorAll('.event-card').forEach(card => {
       card.addEventListener('click', () => {
-        const evtId = card.dataset.evt;
-        AppState.selectedEvt = evtId;
-        showScreen('screen-category');
-        Views.loadCategories(evtId);
+        AppState.selectedEvt = card.dataset.evt;
+        goToCategories(AppState.selectedEvt);
       });
     });
   },

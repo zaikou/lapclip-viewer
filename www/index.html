@@ -22,6 +22,10 @@
     <nav id="year-tabs" class="year-tabs"></nav>
   </header>
   <main id="event-list" class="scrollable"></main>
+  <div class="url-input-bar">
+    <input id="url-input" type="text" placeholder="URLを入力して開く..." onkeydown="if(event.key==='Enter')loadURL()">
+    <button onclick="loadURL()">開く</button>
+  </div>
 </div>
 
 <div id="screen-category" class="screen hidden">

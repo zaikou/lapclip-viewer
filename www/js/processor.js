@@ -6,6 +6,13 @@ const Processor = {
     for (const r of riders) {
       const laps = lapDataMap[r.number] || [];
       riderLapMap[r.number] = laps;
+      // Resolve FINISH sentinel: update lap count from actual data
+      if (laps.length > 0) {
+        r.laps = Math.max(...laps.map(l => l.lapNumber));
+      } else if (r.laps === -1) {
+        // FINISH but no lap data available; treat as 1 lap completed
+        r.laps = 1;
+      }
       let pb = Infinity;
       laps.forEach(l => {
         if (l.lapTimeSec < pb) pb = l.lapTimeSec;
@@ -13,7 +20,7 @@ const Processor = {
       });
       personalBestMap[r.number] = pb;
     }
-    const overallBest = Math.min(...allLaps.filter(x => isFinite(x.lap.lapTimeSec)).map(x => x.lap.lapTimeSec));
+    const overallBest = allLaps.length > 0 ? Math.min(...allLaps.filter(x => isFinite(x.lap.lapTimeSec)).map(x => x.lap.lapTimeSec)) : 0;
     const maxLaps = Math.max(...riders.filter(r => r.laps > 0).map(r => r.laps), 0);
     const totalLaps = Math.max(...allLaps.map(x => x.lap.lapNumber), 0);
     return {

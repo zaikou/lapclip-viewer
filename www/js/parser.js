@@ -40,6 +40,17 @@ const Parser = {
     return h2 ? h2.textContent.trim() : '';
   },
 
+  _categorizeSpan(text) {
+    if (!text) return null;
+    if (text === 'OPN' || text === '-' || /^\d+位$/.test(text)) return 'rank';
+    if (text.startsWith('No.')) return 'number';
+    if (text.endsWith('周') || text === 'FINISH') return 'laps';
+    if (/^\d+(:\d+){2}\.\d+$/.test(text) || text === '-:--:--.--') return 'time';
+    if (text.startsWith('+Top') || /^\+/.test(text)) return 'gap';
+    if (/^\d+(\.\d+)?分$/.test(text)) return 'gap'; // e.g., "+1分" (gap shown as minutes)
+    return 'name';
+  },
+
   parseRiders(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const riders = [];
@@ -47,32 +58,58 @@ const Parser = {
       const name = el.getAttribute('name');
       if (!name) return;
       const spans = el.querySelectorAll('.nwb, .nw');
-      const parts = [];
-      spans.forEach(s => parts.push(s.textContent.trim()));
-      if (parts.length < 5) return;
-      let p = 0;
-      const rankRaw = parts[p++];
-      const number = parts[p++].replace('No.','');
-      const riderName = parts[p++];
-      let laps = 0, totalTime, gap;
-      if (parts.length >= 6) {
-        // With lap count: [rank, no, name, lapCount, totalTime, gap]
-        const lapsRaw = parts[p++].replace('周','');
-        laps = lapsRaw === '-' ? 0 : parseInt(lapsRaw) || 0;
-        totalTime = parts[p++];
-        gap = parts[p++];
+      let number, riderName, laps = 0, totalTime, gap, rankRaw;
+
+      if (spans.length > 0) {
+        spans.forEach(s => {
+          const text = s.textContent.trim();
+          if (!text) return;
+          const cat = this._categorizeSpan(text);
+          if (cat === 'rank') rankRaw = text;
+          else if (cat === 'number') number = text.replace('No.','');
+          else if (cat === 'laps') laps = this._parseLapCount(text);
+          else if (cat === 'time') totalTime = text;
+          else if (cat === 'gap') gap = text;
+          else if (cat === 'name' && !riderName) riderName = text;
+        });
       } else {
-        // Without lap count (single lap): [rank, no, name, totalTime, gap]
-        totalTime = parts[p++];
-        gap = parts[p++];
-        laps = totalTime && totalTime !== '-:--:--.---' ? 1 : 0;
+        // Flat text (hill climb / single-lap format)
+        const lines = el.textContent.split('\n').map(s => s.trim()).filter(s => s);
+        for (const line of lines) {
+          const cat = this._categorizeSpan(line);
+          if (cat === 'rank') rankRaw = line;
+          else if (cat === 'number') number = line.replace('No.','');
+          else if (cat === 'laps') laps = this._parseLapCount(line);
+          else if (cat === 'time') totalTime = line;
+          else if (cat === 'gap') gap = line;
+          else if (cat === 'name' && !riderName) riderName = line;
+        }
       }
+
+      if (!number) return;
+      // Single-lap race: if no lap count span was found but rider has a time, set laps=1
+      if (laps === 0 && totalTime && totalTime !== '-:--:--.--') laps = 1;
+
       const isOPN = rankRaw === 'OPN';
       const isDNS = rankRaw === '-';
       const rank = isDNS ? 999 : (isOPN ? -1 : parseInt(rankRaw) || 0);
-      riders.push({ number, name: riderName, laps, totalTime, gap, rank, isOPN, isDNS });
+      riders.push({ number, name: riderName || '', laps, totalTime, gap, rank, isOPN, isDNS });
     });
     return riders;
+  },
+
+  _parseLapCount(text) {
+    if (text === 'FINISH') return -1; // sentinel: completed, actual count from lap data
+    const s = text.replace('周','').trim();
+    if (s === '-' || s === '0') return 0;
+    if (s.includes('/')) {
+      // Fractional lap: "1/3" → 1/3 ≈ 0.333
+      const parts = s.split('/').map(p => parseFloat(p.trim()));
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && parts[1] > 0) {
+        return parseFloat((parts[0] / parts[1]).toFixed(3));
+      }
+    }
+    return parseInt(s) || 0;
   },
 
   parseNextResultsUrl(html) {
@@ -95,17 +132,28 @@ const Parser = {
     const headerCells = doc.querySelectorAll('table th');
     let hasRankCol = false;
     headerCells.forEach(th => { if (th.textContent.includes('順位')) hasRankCol = true; });
+    let lapIndex = 0;
     rows.forEach(tr => {
       const tds = tr.querySelectorAll('td');
       if (tds.length < 3) return;
       if (hasRankCol && tds.length < 4) return;
       let idx = 0;
-      const lapNum = parseInt(tds[idx++].textContent.trim());
-      if (isNaN(lapNum)) return;
+      const rawCell = tds[idx++].textContent.trim();
+      if (!rawCell) return;
+      let lapNumber;
+      if (rawCell === 'FINISH') {
+        lapNumber = lapIndex + 1;
+      } else {
+        // Parse "1/3周", "1周", etc.
+        const m = rawCell.match(/(\d+)/);
+        if (!m) return;
+        lapNumber = parseInt(m[1]);
+      }
+      lapIndex++;
       const rank = hasRankCol ? parseInt(tds[idx++].textContent.trim()) || 0 : 0;
       const lapTime = tds[idx++].textContent.trim();
       const totalTime = tds[idx].textContent.trim();
-      laps.push({ lapNumber: lapNum, lapRank: rank, lapTime, totalTime, lapTimeSec: this.parseTimeToSeconds(lapTime), totalTimeSec: this.parseTimeToSeconds(totalTime) });
+      laps.push({ lapNumber, lapRank: rank, lapTime, totalTime, lapTimeSec: this.parseTimeToSeconds(lapTime), totalTimeSec: this.parseTimeToSeconds(totalTime) });
     });
     return laps;
   },

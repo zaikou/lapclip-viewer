@@ -142,7 +142,7 @@ const Views = {
       const active = sortLap === lap ? ' sort-active' : '';
       html += `<th class="th-sort${active}" data-sort="${lap}">L${lap}</th>`;
     }
-    html += '<th>Total</th><th>Best</th><th>Gap</th></tr></thead><tbody>';
+    html += '<th class="th-sort" data-sort="0">Total</th><th>Best</th><th>Gap</th></tr></thead><tbody>';
     const topEntry = rankings[0];
     const topRider = topEntry ? this._resolveEntry(topEntry) : null;
     const topTotalSec = topRider ? Parser.parseTimeToSeconds(topRider.totalTime) : 0;

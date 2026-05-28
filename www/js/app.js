@@ -93,7 +93,11 @@ async function goToCategories(evtId) {
   await Views.loadCategories(evtId);
 }
 
+let _lastRefresh = 0;
 function refreshData() {
+  const now = Date.now();
+  if (now - _lastRefresh < 5000) return;
+  _lastRefresh = now;
   if (!AppState.selectedEvt || !AppState.selectedCtg) return;
   window._overallSortLap = 0;
   window._overallCTSortLap = 0;
